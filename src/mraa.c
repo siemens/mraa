@@ -955,7 +955,11 @@ mraa_find_i2c_bus_pci(const char* pci_device, const char *pci_id, const char* ad
                     if (strncmp("i2c", token, 3) == 0) {
                         token = strsep(&dup, &delim);
                         if (token != NULL) {
-                            return atoi(token);
+                            int ret = -1;
+                            if (mraa_atoi(token, &ret) == MRAA_SUCCESS) {
+                                return ret;
+                            }
+                            return -1;
                         }
                     }
                 }
@@ -964,20 +968,6 @@ mraa_find_i2c_bus_pci(const char* pci_device, const char *pci_id, const char* ad
             free(namelist);
         }
     }
-#if 0
-    if (mraa_file_exist("/sys/class/i2c-dev/i2c-0/subsystem")) {
-        if (num_i2c_devices == 0) {
-	    if (nftw("/sys/class/i2c-dev/", &mraa_count_i2c_files, 20, FTW_PHYS) == -1) {
-                return -1;
-            }
-        }
-        ssizet_t len;
-        if ((len = readlink("/sys/class/i2c-dev/i2c-0/subsystem/i2c-0", buf, sizeof(len)-1)) != -1) {
-            path[len] = '\0';
-        }
-
-    }
-#endif
     return -1;
 }
 
