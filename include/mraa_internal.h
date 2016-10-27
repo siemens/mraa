@@ -140,6 +140,16 @@ mraa_boolean_t mraa_link_targets(const char* filename, const char* targetname);
  */
 int mraa_find_i2c_bus(const char* devname, int startfrom);
 
+/**
+ * helper function to find an i2c bus based on pci data
+ *
+ * @param pci_device
+ * @param pci_id on pci_device
+ * @param i2c adapter name & number
+ * @return the matching i2c-dev bus id or -1
+ */
+int mraa_find_i2c_bus_pci(const char* pci_device, const char *pci_id, const char* adapter_name);
+
 #if defined(IMRAA)
 /**
  * read Imraa subplatform lock file, caller is responsible to free return

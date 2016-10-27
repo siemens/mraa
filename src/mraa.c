@@ -929,6 +929,59 @@ mraa_count_i2c_files(const char* path, const struct stat* sb, int flag, struct F
 }
 
 int
+mraa_find_i2c_bus_pci(const char* pci_device, const char *pci_id, const char* adapter_name)
+{
+    /**
+     * For example we'd get something like:
+     * pci0000:00/0000:00:16.3/i2c_desiignware.3
+     */
+    char path[1024];
+    snprintf(path, 1024-1, "/sys/devices/pci%s/%s/%s/", pci_device, pci_id, adapter_name);
+    if (mraa_file_exist(path)) {
+        struct dirent **namelist;
+        int n;
+        n = scandir(path, &namelist, NULL, alphasort);
+        if (n < 0) {
+            syslog(LOG_ERR, "Failed to get information on i2c");
+            return -1;
+        }
+        else {
+            while (n--) {
+	        char* dup = strdup(namelist[n]->d_name);
+                const char delim = '-';
+                char* token;
+                token = strsep(&dup, &delim);
+                if (token != NULL) {
+                    if (strncmp("i2c", token, 3) == 0) {
+                        token = strsep(&dup, &delim);
+                        if (token != NULL) {
+                            return atoi(token);
+                        }
+                    }
+                }
+                free(namelist[n]);
+            }
+            free(namelist);
+        }
+    }
+#if 0
+    if (mraa_file_exist("/sys/class/i2c-dev/i2c-0/subsystem")) {
+        if (num_i2c_devices == 0) {
+	    if (nftw("/sys/class/i2c-dev/", &mraa_count_i2c_files, 20, FTW_PHYS) == -1) {
+                return -1;
+            }
+        }
+        ssizet_t len;
+        if ((len = readlink("/sys/class/i2c-dev/i2c-0/subsystem/i2c-0", buf, sizeof(len)-1)) != -1) {
+            path[len] = '\0';
+        }
+
+    }
+#endif
+    return -1;
+}
+
+int
 mraa_find_i2c_bus(const char* devname, int startfrom)
 {
     char path[64];
