@@ -40,6 +40,32 @@
 #define MAX_SIZE 64
 #define POLL_TIMEOUT
 
+int mraa_get_gpiochip_base(const char* device_path)
+{
+    char *base_file;
+    char buf[1024];
+    FILE* fh;
+    int ret;
+
+    snprintf(buf, sizeof(buf) - 1, "%s/gpio/gpiochip*/base", device_path);
+    base_file = mraa_file_unglob(buf);
+    if (!base_file)
+        return -1;
+
+    fh = fopen(base_file, "r");
+    if (!fh)
+        return -1;
+
+    ret = fread(buf, 1, sizeof(buf) - 1, fh);
+    fclose(fh);
+
+    if (ret < 0)
+        return -1;
+
+    buf[ret] = 0;
+    return strtol(buf, NULL, 10);
+}
+
 static mraa_result_t
 mraa_gpio_get_valfp(mraa_gpio_context dev)
 {

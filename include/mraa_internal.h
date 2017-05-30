@@ -179,6 +179,14 @@ uint32_t mraa_add_from_lockfile(const char* imraa_lock_file);
 mraa_result_t imraa_init();
 #endif
 
+/**
+ * helper function to find the gpiochip base corresponding to a device path
+ *
+ * @param device_path sysfs path to device
+ * @return GPIO base number or -1
+ */
+int mraa_get_gpiochip_base(const char* device_path);
+
 #ifdef __cplusplus
 }
 #endif
