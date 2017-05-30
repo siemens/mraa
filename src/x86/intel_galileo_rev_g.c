@@ -113,7 +113,7 @@ mraa_intel_galileo_gen2_pwm_period_replace(mraa_pwm_context dev, int period)
 }
 
 mraa_result_t
-mraa_intel_galileo_gen2_gpio_mode_replace(mraa_gpio_context dev, mraa_gpio_mode_t mode)
+mraa_intel_galileo_gen2_gpio_mode_replace_legacy(mraa_gpio_context dev, mraa_gpio_mode_t mode)
 {
     if (dev->value_fp != -1) {
         close(dev->value_fp);
@@ -182,6 +182,19 @@ mraa_intel_galileo_gen2_gpio_mode_replace(mraa_gpio_context dev, mraa_gpio_mode_
     mraa_gpio_close(pullup_e);
     close(drive);
     return MRAA_SUCCESS;
+}
+
+mraa_result_t
+mraa_intel_galileo_gen2_gpio_mode_replace(mraa_gpio_context dev, mraa_gpio_mode_t mode)
+{
+    /*
+     * The drive attribute is a legacy vendor kernel feature. Reject
+     * changes unless they reflect an automatically achieved request.
+     */
+    if (mode == MRAA_GPIO_HIZ)
+        return MRAA_SUCCESS;
+
+    return MRAA_ERROR_FEATURE_NOT_IMPLEMENTED;
 }
 
 static mraa_result_t
@@ -265,6 +278,7 @@ mraa_board_t*
 mraa_intel_galileo_gen2()
 {
     int sch_base, dwapb_base, int3491_0_base, int3491_1_base, int3491_2_base, int3492_0_base;
+    mraa_boolean_t legacy_kernel = 0;
 
     mraa_board_t* b = (mraa_board_t*) calloc(1, sizeof(mraa_board_t));
     if (b == NULL) {
@@ -295,6 +309,9 @@ mraa_intel_galileo_gen2()
     if (int3492_0_base < 0) {
         /* legacy vendor kernel - use hard-coded base */
         int3492_0_base = 64;
+
+        /* ...and now we know where we are running on */
+        legacy_kernel = 1;
     }
 
     b->platform_name = PLATFORM_NAME;
@@ -314,7 +331,9 @@ mraa_intel_galileo_gen2()
     b->adv_func->gpio_close_pre = &mraa_intel_galileo_gen2_gpio_close_pre;
     b->adv_func->gpio_dir_pre = &mraa_intel_galileo_gen2_dir_pre;
     b->adv_func->pwm_period_replace = &mraa_intel_galileo_gen2_pwm_period_replace;
-    b->adv_func->gpio_mode_replace = &mraa_intel_galileo_gen2_gpio_mode_replace;
+    b->adv_func->gpio_mode_replace = legacy_kernel ?
+        &mraa_intel_galileo_gen2_gpio_mode_replace_legacy :
+        &mraa_intel_galileo_gen2_gpio_mode_replace;
     b->adv_func->gpio_mmap_setup = &mraa_intel_galileo_g2_mmap_setup;
 
     b->pins = (mraa_pininfo_t*) calloc(MRAA_INTEL_GALILEO_GEN_2_PINCOUNT, sizeof(mraa_pininfo_t));
