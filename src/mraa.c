@@ -393,6 +393,7 @@ mraa_setup_mux_mapped(mraa_pin_t meta)
 
     for (mi = 0; mi < meta.mux_total; mi++) {
 
+        syslog(LOG_DEBUG, "PINMUX[%d] cmd %d pin %d\n", mi, meta.mux[mi].pincmd, meta.mux[mi].pin);
         switch (meta.mux[mi].pincmd) {
             case PINCMD_UNDEFINED: // used for backward compatibility
                 if (meta.mux[mi].pin != last_pin) {

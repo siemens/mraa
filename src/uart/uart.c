@@ -114,6 +114,7 @@ static unsigned int speed_to_uint(speed_t speedt) {
         { B1200, 1200 },
         { B1800, 1800 },
         { B2400, 2400 },
+        { B4800, 4800 },
         { B9600, 9600 },
         { B19200, 19200 },
         { B38400, 38400 },
@@ -201,6 +202,12 @@ mraa_uart_init(int index)
                     return NULL;
                 }
             }
+            if (plat->adv_func->setup_mux_register) {
+                if(plat->adv_func->setup_mux_register(pos, MUX_REGISTER_MODE_UART) != MRAA_SUCCESS) {
+                    syslog(LOG_ERR, "uart%i: init: failed to setup mux register for RX pin", index);
+                    return NULL;
+                }
+            }
         }
 
         pos = plat->uart_dev[index].tx;
@@ -208,6 +215,12 @@ mraa_uart_init(int index)
             if (plat->pins[pos].uart.mux_total > 0) {
                 if (mraa_setup_mux_mapped(plat->pins[pos].uart) != MRAA_SUCCESS) {
                     syslog(LOG_ERR, "uart%i: init: failed to setup muxes for TX pin", index);
+                    return NULL;
+                }
+            }
+            if (plat->adv_func->setup_mux_register) {
+                if(plat->adv_func->setup_mux_register(pos, MUX_REGISTER_MODE_UART) != MRAA_SUCCESS) {
+                    syslog(LOG_ERR, "uart%i: init: failed to setup mux register for TX pin", index);
                     return NULL;
                 }
             }
@@ -606,9 +619,21 @@ mraa_uart_set_flowcontrol(mraa_uart_context dev, mraa_boolean_t xonxoff, mraa_bo
                         return MRAA_ERROR_FEATURE_NOT_SUPPORTED;
                     }
                 }
+                if (plat->adv_func->setup_mux_register) {
+                    if(plat->adv_func->setup_mux_register(pos_cts, MUX_REGISTER_MODE_UART) != MRAA_SUCCESS) {
+                        syslog(LOG_ERR, "uart%i: init: failed to setup mux register for CTS pin", dev->index);
+                        return MRAA_ERROR_FEATURE_NOT_SUPPORTED;
+                    }
+                }
                 if (plat->pins[pos_rts].uart.mux_total > 0) {
                     if (mraa_setup_mux_mapped(plat->pins[pos_rts].uart) != MRAA_SUCCESS) {
                         syslog(LOG_ERR, "uart%i: init: failed to setup muxes for RTS pin", dev->index);
+                        return MRAA_ERROR_FEATURE_NOT_SUPPORTED;
+                    }
+                }
+                if (plat->adv_func->setup_mux_register) {
+                    if(plat->adv_func->setup_mux_register(pos_rts, MUX_REGISTER_MODE_UART) != MRAA_SUCCESS) {
+                        syslog(LOG_ERR, "uart%i: init: failed to setup mux register for RTS pin", dev->index);
                         return MRAA_ERROR_FEATURE_NOT_SUPPORTED;
                     }
                 }
@@ -672,7 +697,14 @@ mraa_uart_set_timeout(mraa_uart_context dev, int read, int write, int interchar)
             read = 1;
     }
     termio.c_lflag &= ~ICANON; /* Set non-canonical mode */
-    termio.c_cc[VTIME] = read; /* Set timeout in tenth seconds */
+    if (read > 0) {
+	termio.c_cc[VTIME] = read; /* Set timeout in tenth seconds */
+	termio.c_cc[VMIN]  = 0;
+    } else {
+	termio.c_cc[VTIME] = 0;   /* read <= 0 will disable timeout */
+	termio.c_cc[VMIN]  = 1;
+    }
+
     if (tcsetattr(dev->fd, TCSANOW, &termio) < 0) {
         syslog(LOG_ERR, "uart%i: set_timeout: tcsetattr() failed: %s", dev->index, strerror(errno));
         return MRAA_ERROR_FEATURE_NOT_SUPPORTED;

@@ -240,6 +240,13 @@ mraa_pwm_init(int pin)
         }
     }
 
+    if (board->adv_func->setup_mux_register) {
+        if(board->adv_func->setup_mux_register(pin, MUX_REGISTER_MODE_PWM) != MRAA_SUCCESS) {
+            syslog(LOG_ERR, "pwm_init: Failed to set-up pwm%i multiplex register", pin);
+            return NULL;
+        }
+    }
+
     int chip = board->pins[pin].pwm.parent_id;
     int pinn = board->pins[pin].pwm.pinmap;
 
