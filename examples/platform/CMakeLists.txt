@@ -4,6 +4,18 @@ target_link_libraries (gpio_edison mraa)
 add_executable (up2-leds up2-leds.cpp)
 target_link_libraries (up2-leds mraa)
 
+add_executable (aio_iot2050 aio_iot2050.c)
+target_link_libraries (aio_iot2050 mraa)
+
+add_executable (spi_iot2050 spi_iot2050.c)
+target_link_libraries (spi_iot2050 mraa)
+
+add_executable (pwm_iot2050 pwm_iot2050.c)
+target_link_libraries (pwm_iot2050 mraa)
+
+add_executable (led_iot2050 led_iot2050.c)
+target_link_libraries (led_iot2050 mraa)
+
 include_directories(${PROJECT_SOURCE_DIR}/api)
 include_directories(${PROJECT_SOURCE_DIR}/api/mraa)
 
