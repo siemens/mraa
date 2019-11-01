@@ -248,6 +248,14 @@ mraa_aio_set_bit(mraa_aio_context dev, int bits)
         return MRAA_ERROR_INVALID_RESOURCE;
     }
     dev->value_bit = bits;
+    raw_bits = mraa_adc_raw_bits();
+    if (raw_bits < dev->value_bit) {
+        shifter_value = dev->value_bit - raw_bits;
+        max_analog_value = ((1 << raw_bits) - 1) << shifter_value;
+    } else {
+        shifter_value = raw_bits - dev->value_bit;
+        max_analog_value = ((1 << raw_bits) - 1) >> shifter_value;
+    }
     return MRAA_SUCCESS;
 }
 
